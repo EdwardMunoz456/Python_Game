@@ -5,17 +5,19 @@ width = 500
 height = 500
 sprite1 = pygame.Surface((16, 16))
 sprite2 = pygame.Surface((16, 16))
+sprite3 = pygame.Surface((16, 16))
 left = False
 right = False
 
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = sprite1
-        self.image.fill((225, 225, 225))
+        self.image = pygame.image.load("character.png")
+        self.image = pygame.transform.scale(self.image, (16, 32))
+        self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
-        self.rect.centerx = width / 2
-        self.rect.bottom = 200
+        self.rect.left = 272
+        self.rect.top = 320
         self.speedx = 0
         self.speedy = 0
         self.movement = [0,0]
@@ -26,6 +28,7 @@ class Player(pygame.sprite.Sprite):
         self.movement[1] += self.speedy
         self.speedx = 0
         self.speedy = 0
+
         if self.rect.right >= width:
             self.rect.right = width
         if self.rect.left <= 0:
@@ -43,5 +46,15 @@ class red_her(pygame.sprite.Sprite):
         self.image = sprite2
         self.image.fill((225, 0, 0))
         self.rect = self.image.get_rect()
-        self.rect.centerx = random.randint(0 * 16, 32 * 16)
-        self.rect.bottom = random.randint(100, 240)
+        self.rect.left = random.randint(0 * 16, 32 * 16)
+        self.rect.bottom = random.randint(7 * 16, 17 * 16)
+
+
+class goal(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = sprite3
+        self.image.fill((0, 255, 0))
+        self.rect = self.image.get_rect()
+        self.rect.left = 0
+        self.rect.bottom = 48
