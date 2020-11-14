@@ -1,6 +1,8 @@
+# import important modules as well as
 import pygame
 import player_enemy_module
 import random
+pygame.mixer.init()
 # Game text
 pygame.font.init()
 font = pygame.font.SysFont('none', 30)
@@ -9,11 +11,12 @@ menu = font.render('press the up arrow to start', False, (0, 0, 0))
 control_press = font.render('enter for controls', False, (0, 0, 0))
 controls = font.render(f'''Arrow keys for movement Space to dash''', False, (255, 255, 255))
 menu_return = font.render('Backspace to return to the menu', False, (255, 255, 255))
+# calculations to fit text onto screen
 control_menu = controls.get_width() / 2
 start_text = menu.get_width() / 2
 control_text = control_press.get_width() / 2
 return_placement = menu_return.get_width() / 2
-
+# text list used during tutorial
 dialogue = ["> It's night, people will need help I should get moving.",
             "> use the arrow keys to move ",
             "This cliff is high, but I should be able to jump over it.",
@@ -30,7 +33,8 @@ black = (0, 0, 0)
 white = (255, 255, 255)
 red = (255, 0, 0)
 green = (0, 255, 0)
-blue = (0, 0, 50)
+dark_blue = (0, 0, 50)
+blue = (0, 0, 255)
 yellow = (255, 255, 0)
 # add sprites to the screen
 all_sprites = pygame.sprite.Group()
@@ -58,6 +62,7 @@ dirt_tile = pygame.image.load("tile002.png")
 tile_size = grass_tile.get_width()
 
 
+# this function reads the text file and creates a list based on the file you ask it to read
 def load_map(path):
     f = open(path + '.txt', 'r')
     data = f.read()
@@ -69,8 +74,7 @@ def load_map(path):
     return game_map
 
 
-
-
+# tests for collisions and returns a list of tiles
 def collision_test(rect, tiles):
     collide_list = []
     for tile in tiles:
@@ -79,6 +83,26 @@ def collision_test(rect, tiles):
     return collide_list
 
 
+# tests for collisions with the npcs
+def npc_collide(rect, tiles):
+    npc_collide_list = []
+    for tile in tiles:
+        if rect.colliderect(tile):
+            npc_collide_list.append(tile)
+    return npc_collide_list
+
+
+# moves the npc if a collision is found
+def npc_move(rect, tiles):
+    collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
+    npc_collide_list = npc_collide(rect, tiles)
+    for tile in npc_collide_list:
+        rect.bottom = tile.top
+
+    return rect, collision_types
+
+
+# moves the charachter if collisions are found
 def move(rect, movement, tiles):
     collision_types = {'top': False, 'bottom': False, 'right': False, 'left': False}
     rect.x += movement[0]
@@ -101,6 +125,9 @@ def move(rect, movement, tiles):
             collision_types['top'] = True
 
     return rect, collision_types
+
+
+#the menu screen
 def start_screen():
     running = True
     control_screen = False
@@ -116,6 +143,7 @@ def start_screen():
                     control_screen = False
                 if event.key == pygame.K_UP:
                     start = True
+# switches to the control screen
         if control_screen:
             display.fill(black)
             display.blit(controls, (250 - control_menu, 220))
@@ -123,28 +151,37 @@ def start_screen():
             surface = pygame.transform.scale(display, (width, height))
             screen.blit(surface, (0, 0))
             pygame.display.flip()
+# switches back to the menu
         elif control_screen == False:
             display.fill(white)
+            title = pygame.image.load("images/title.png")
+            display.blit(title, (0, 0))
             display.blit(control_press, (250 - control_text, 250))
             display.blit(menu, (250 - start_text, 100))
             surface = pygame.transform.scale(display, (width, height))
             screen.blit(surface, (0, 0))
             pygame.display.flip()
+# starts the game
         if start:
             running = False
             tutorial()
+
+
+# this is the tutorial level
 def tutorial():
+    pygame.mixer.music.load("level_music.mp3")
+    pygame.mixer.music.play(1)
     facing_left = False
     facing_right = True
     dash = True
     cooldown = 300
     use = 20
     running = True
-    text = True
     left = False
     right = False
     jump = False
     air_timer = 0
+    # loads the tutorial level
     game_map = load_map('tutorial_level')
     checkpoint = pygame.Rect(272, 320, 16, 16)
     checkpoint1 = pygame.Rect(128, 320, 16, 16)
@@ -158,7 +195,7 @@ def tutorial():
     while running:
         clock.tick(FPS)
         display.fill(black)
-
+# displays the map
         tile_rects = []
         y = 0
         for row in game_map:
@@ -195,8 +232,7 @@ def tutorial():
                     right = False
                 if event.key == pygame.K_LEFT:
                     left = False
-        if h.rect.colliderect(char.rect):
-            level_complete = True
+
         char.rect, collisions = move(char.rect, char.movement, tile_rects)
         if air_timer > 4:
             jump = False
@@ -243,7 +279,7 @@ def tutorial():
         rank_wide = rank_text.get_width()
         display.blit(rank_text, (500 - rank_wide, 0))
         score_text = font.render(f"score - {score}", False, (255, 255, 255))
-        display.blit(score_text, (0,0))
+        display.blit(score_text, (0, 0))
         surface = pygame.transform.scale(display, (width, height))
         screen.blit(surface, (0, 0))
         if checkpoint.colliderect(char.rect):
@@ -254,15 +290,15 @@ def tutorial():
                         pda = False
                         running = False
                     if event.type == pygame.KEYDOWN:
-                        checkpoint.move_ip(200,200)
+                        checkpoint.move_ip(200, 200)
                         checkpoint.inflate_ip(1, 1)
                         pygame.event.clear()
                         pda = False
 
                 display.fill((0, 20, 0))
-                text1 = pda_font.render(dialogue[0], False, (green))
-                text2 = pda_font.render(dialogue[1], False, (white))
-                display.blit(text1,(2, 0))
+                text1 = pda_font.render(dialogue[0], False, green)
+                text2 = pda_font.render(dialogue[1], False, white)
+                display.blit(text1, (2, 0))
                 display.blit(text2, (2, 15))
                 surface = pygame.transform.scale(display, (width, height))
                 screen.blit(surface, (0, 0))
@@ -275,17 +311,17 @@ def tutorial():
                         pda = False
                         running = False
                     if event.type == pygame.KEYDOWN:
-                        checkpoint1.move_ip(200,200)
+                        checkpoint1.move_ip(200, 200)
                         checkpoint1.inflate_ip(1, 1)
                         pygame.event.clear()
                         pda = False
 
                 display.fill((0, 20, 0))
-                text1 = pda_font.render(dialogue[0], False, (green))
-                text2 = pda_font.render(dialogue[1], False, (white))
-                text3 = pda_font.render(dialogue[2], False, (green))
-                text4 = pda_font.render(dialogue[3], False, (white))
-                display.blit(text1,(2, 0))
+                text1 = pda_font.render(dialogue[0], False, green)
+                text2 = pda_font.render(dialogue[1], False, white)
+                text3 = pda_font.render(dialogue[2], False, green)
+                text4 = pda_font.render(dialogue[3], False, white)
+                display.blit(text1, (2, 0))
                 display.blit(text2, (2, 15))
                 display.blit(text3, (2, 30))
                 display.blit(text4, (2, 45))
@@ -307,12 +343,12 @@ def tutorial():
                         pda = False
 
                 display.fill((0, 20, 0))
-                text1 = pda_font.render(dialogue[0], False, (green))
-                text2 = pda_font.render(dialogue[1], False, (white))
-                text3 = pda_font.render(dialogue[2], False, (green))
-                text4 = pda_font.render(dialogue[3], False, (white))
-                text5 = pda_font.render(dialogue[4], False, (green))
-                text6 = pda_font.render(dialogue[5], False, (white))
+                text1 = pda_font.render(dialogue[0], False, green)
+                text2 = pda_font.render(dialogue[1], False, white)
+                text3 = pda_font.render(dialogue[2], False, green)
+                text4 = pda_font.render(dialogue[3], False, white)
+                text5 = pda_font.render(dialogue[4], False, green)
+                text6 = pda_font.render(dialogue[5], False, white)
                 display.blit(text1, (2, 0))
                 display.blit(text2, (2, 15))
                 display.blit(text3, (2, 30))
@@ -337,15 +373,15 @@ def tutorial():
                         pda = False
 
                 display.fill((0, 20, 0))
-                text1 = pda_font.render(dialogue[0], False, (green))
-                text2 = pda_font.render(dialogue[1], False, (white))
-                text3 = pda_font.render(dialogue[2], False, (green))
-                text4 = pda_font.render(dialogue[3], False, (white))
-                text5 = pda_font.render(dialogue[4], False, (green))
-                text6 = pda_font.render(dialogue[5], False, (white))
-                text7 = pda_font.render(dialogue[7], False, (blue))
-                text8 = pda_font.render(dialogue[8], False, (green))
-                text9 = pda_font.render(dialogue[9], False, (green))
+                text1 = pda_font.render(dialogue[0], False, green)
+                text2 = pda_font.render(dialogue[1], False, white)
+                text3 = pda_font.render(dialogue[2], False, green)
+                text4 = pda_font.render(dialogue[3], False, white)
+                text5 = pda_font.render(dialogue[4], False, green)
+                text6 = pda_font.render(dialogue[5], False, white)
+                text7 = pda_font.render(dialogue[7], False, blue)
+                text8 = pda_font.render(dialogue[8], False, green)
+                text9 = pda_font.render(dialogue[9], False, green)
 
                 wide = text7.get_width()
                 display.blit(text1, (2, 0))
@@ -375,17 +411,17 @@ def tutorial():
                         pda = False
 
                 display.fill((0, 20, 0))
-                text1 = pda_font.render(dialogue[0], False, (green))
-                text2 = pda_font.render(dialogue[1], False, (white))
-                text3 = pda_font.render(dialogue[2], False, (green))
-                text4 = pda_font.render(dialogue[3], False, (white))
-                text5 = pda_font.render(dialogue[4], False, (green))
-                text6 = pda_font.render(dialogue[5], False, (white))
-                text7 = pda_font.render(dialogue[7], False, (blue))
-                text8 = pda_font.render(dialogue[8], False, (green))
-                text9 = pda_font.render(dialogue[9], False, (green))
-                text10 = pda_font.render(dialogue[6], False, (blue))
-                text11 = pda_font.render(dialogue[10], False, (green))
+                text1 = pda_font.render(dialogue[0], False, green)
+                text2 = pda_font.render(dialogue[1], False, white)
+                text3 = pda_font.render(dialogue[2], False, green)
+                text4 = pda_font.render(dialogue[3], False, white)
+                text5 = pda_font.render(dialogue[4], False, green)
+                text6 = pda_font.render(dialogue[5], False, white)
+                text7 = pda_font.render(dialogue[7], False, blue)
+                text8 = pda_font.render(dialogue[8], False, green)
+                text9 = pda_font.render(dialogue[9], False, green)
+                text10 = pda_font.render(dialogue[6], False, blue)
+                text11 = pda_font.render(dialogue[10], False, green)
 
                 wide = text7.get_width()
                 wider = text10.get_width()
@@ -405,6 +441,7 @@ def tutorial():
                 pygame.display.flip()
         if score == 100 and rank == 10:
             pda = True
+            pygame.mixer.music.stop()
             while pda:
                 for event in pygame.event.get():
                     if event.type == pygame.QUIT:
@@ -416,11 +453,11 @@ def tutorial():
                         running = False
                         endless_mode()
                 display.fill((0, 20, 0))
-                complete_text = font.render(f"Night complete! ", False, (green))
+                complete_text = font.render(f"Night complete! ", False, green)
                 display.blit(complete_text, (150, 100))
-                rank_text = font.render(f"rank - {rank}", False, (green))
+                rank_text = font.render(f"rank - {rank}", False, green)
                 display.blit(rank_text, (150, 130))
-                score_text = font.render(f"score - {score}", False, (green))
+                score_text = font.render(f"score - {score}", False, green)
                 display.blit(score_text, (150, 160))
                 surface = pygame.transform.scale(display, (width, height))
                 screen.blit(surface, (0, 0))
@@ -429,6 +466,8 @@ def tutorial():
 
 
 def endless_mode():
+    pygame.mixer.music.load("level_music.mp3")
+    pygame.mixer.music.play(1)
     facing_left = False
     facing_right = True
     dash = True
@@ -442,14 +481,14 @@ def endless_mode():
     game_map = load_map('level_1')
     rank = 0
     score = 0
-    timer = 7200
+    timer = 2700
     m = player_enemy_module.red_her()
     h = player_enemy_module.goal()
     all_sprites.add(m)
     all_sprites.add(h)
     while running:
         clock.tick(FPS)
-        display.fill(blue)
+        display.fill(dark_blue)
         tile_rects = []
         y = 0
         for row in game_map:
@@ -488,9 +527,9 @@ def endless_mode():
                     right = False
                 if event.key == pygame.K_LEFT:
                     left = False
-        if h.rect.colliderect(char.rect):
-            level_complete = True
         char.rect, collisions = move(char.rect, char.movement, tile_rects)
+        m.rect, colliding = npc_move(m.rect, tile_rects)
+        h.rect, colliding = npc_move(h.rect, tile_rects)
         if air_timer > 4:
             jump = False
         if right:
@@ -539,7 +578,7 @@ def endless_mode():
             all_sprites.add(h)
             player_enemy_module.goal.add(h)
             h.rect.left = random.randint(4, 24) * 16
-            h.rect.bottom = random.randint(1,23) * 16
+            h.rect.bottom = random.randint(1, 23) * 16
         if m.rect.colliderect(char.rect):
             rank += 10
             m.rect.move_ip(500, 500)
@@ -551,24 +590,36 @@ def endless_mode():
             player_enemy_module.red_her.add(m)
             m.rect.left = random.randint(4, 24) * 16
             m.rect.bottom = random.randint(1, 23) * 16
+        timer_text = f"T - {timer} until sunrise"
+        timer_show = font.render(timer_text, False, white)
+        display.blit(timer_show, (150, 0))
         timer -= 1
         if timer == 0:
+
             pda = True
+            pygame.mixer.music.stop()
+            h.remove(all_sprites)
+            h.image.fill((0, 0, 50))
+            m.remove(all_sprites)
+            m.image.fill((0, 0, 50))
             while pda:
                 for event in pygame.event.get():
-                    if event.type == pygame.QUIT:
-                        pda = False
-                        running = False
                     if event.type == pygame.KEYDOWN:
                         pygame.event.clear()
                         pda = False
                         running = False
+                        endings(rank, score)
+                        return rank, score
+
+                    if event.type == pygame.QUIT:
+                        pda = False
+                        running = False
                 display.fill((0, 20, 0))
-                complete_text = font.render(f"Night complete! ", False, (green))
+                complete_text = font.render(f"Night complete! ", False, green)
                 display.blit(complete_text, (150, 100))
-                rank_text = font.render(f"rank - {rank}", False, (green))
+                rank_text = font.render(f"rank - {rank}", False, green)
                 display.blit(rank_text, (150, 130))
-                score_text = font.render(f"score - {score}", False, (green))
+                score_text = font.render(f"score - {score}", False, green)
                 display.blit(score_text, (150, 160))
                 surface = pygame.transform.scale(display, (width, height))
                 screen.blit(surface, (0, 0))
@@ -584,6 +635,138 @@ def endless_mode():
         screen.blit(surface, (0, 0))
         pygame.display.flip()
 
+def endings(rank, score):
+    if rank  == 0 and score > 0:
+        pda = True
+        while pda:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.event.clear()
+                    pda = False
+                    end_credits()
+            display.fill((0, 20, 0))
+            complete_text = pda_font.render(f"Good Ending!", False, (green))
+            display.blit(complete_text, (150, 100))
+            rank_text = pda_font.render(f"those that most needed your help received it", False, (green))
+            rank_width = rank_text.get_width() / 2
+            display.blit(rank_text, (250- rank_width, 130))
+            score_text = pda_font.render(f"the world is a better place thanks to you!", False, (green))
+            score_width = score_text.get_width() / 2
+            display.blit(score_text, (250 - score_width, 160))
+            surface = pygame.transform.scale(display, (width, height))
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+    if score == 0 and rank > 0:
+        pda = True
+        while pda:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.event.clear()
+                    pda = False
+                    end_credits()
+            display.fill((0, 20, 0))
+            complete_text = pda_font.render(f"Bad Ending 2!", False, (green))
+            display.blit(complete_text, (150, 100))
+            rank_text = pda_font.render(f"you did it for the prestige", False, (green))
+            rank_width = rank_text.get_width() / 2
+            display.blit(rank_text, (250 - rank_width, 130))
+            score_text = pda_font.render(f"you did not help the needy, the world has not changed", False, (green))
+            score_width = score_text.get_width() / 2
+            display.blit(score_text, (250 - score_width, 160))
+            surface = pygame.transform.scale(display, (width, height))
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+    if rank == 0 and score == 0:
+        pda = True
+        while pda:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.event.clear()
+                    pda = False
+                    end_credits()
+            display.fill((0, 20, 0))
+            complete_text = pda_font.render(f"Bad Ending 1!", False, (green))
+            display.blit(complete_text, (150, 100))
+            rank_text = pda_font.render(f"you did not care, nor did you help anyone", False, (green))
+            rank_width = rank_text.get_width() / 2
+            display.blit(rank_text, (250 - rank_width, 130))
+            score_text = pda_font.render(f"the world has become worse", False, (green))
+            score_width = score_text.get_width() / 2
+            display.blit(score_text, (250 - score_width, 160))
+            surface = pygame.transform.scale(display, (width, height))
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+    if 0 < score < rank:
+        pda = True
+        while pda:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.event.clear()
+                    pda = False
+                    end_credits()
+            display.fill((0, 20, 0))
+            complete_text = pda_font.render(f"Bad ending 3", False, (green))
+            display.blit(complete_text, (150, 100))
+            rank_text = pda_font.render(f"it was just a hobby for you, you did it for the fame", False, (green))
+            rank_width = rank_text.get_width() / 2
+            display.blit(rank_text, (250 - rank_width, 130))
+            score_text = pda_font.render(f"you sit at your desk in a big company while the poor starve", False, (green))
+            score_width = score_text.get_width() / 2
+            display.blit(score_text, (250 - score_width, 160))
+            surface = pygame.transform.scale(display, (width, height))
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+    if 0 < rank < score:
+        pda = True
+        while pda:
+            for event in pygame.event.get():
+                if event.type == pygame.KEYDOWN:
+                    pygame.event.clear()
+                    pda = False
+                    end_credits()
+            display.fill((0, 20, 0))
+            complete_text = pda_font.render(f"good ending 3!", False, (green))
+            display.blit(complete_text, (150, 100))
+            rank_text = pda_font.render(f"you helped the needy, but you increased your fame along the way ", False, (green))
+            rank_width = rank_text.get_width() / 2
+            display.blit(rank_text, (250 - rank_width, 130))
+            score_text = pda_font.render(f"the world is slightly better", False, (green))
+            score_width = score_text.get_width() / 2
+            display.blit(score_text, (250 - score_width, 160))
+            surface = pygame.transform.scale(display, (width, height))
+            screen.blit(surface, (0, 0))
+            pygame.display.flip()
+
+
+def end_credits():
+    running = True
+    while running:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                running = False
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_r:
+                    pygame.event.clear()
+                    running = False
+                    endless_mode()
+        display.fill((0, 20, 0))
+        goodbye = font.render("Thank you for playing!!!", False, (green))
+        display.blit(goodbye, (100, 100))
+        developer = font.render("Lead developer  - Edward Munoz", False, (green))
+        display.blit(developer, (100, 130))
+        designer = font.render("Lead designer  - Bruno Contreras", False, (green))
+        display.blit(designer, (100, 160))
+        music1 = pda_font.render("Beauty Flow by Kevin MacLeod", False, (green))
+        music2 = pda_font.render("Link: https://incompetech.filmmusic.io/song/5025-beauty-flow", False, (green))
+        music3 = pda_font.render("License: http://creativecommons.org/licenses/by/4.0/", False, (green))
+        display.blit(music1, (0, 190))
+        display.blit(music2, (0, 210))
+        display.blit(music3, (0, 240))
+        restart = pda_font.render("press r to restart", False, (green))
+        display.blit(restart, (150, 255))
+        surface = pygame.transform.scale(display, (width, height))
+        screen.blit(surface, (0, 0))
+        pygame.display.flip()
 def game_loop():
     seconds = 30
     running = True
