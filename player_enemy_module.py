@@ -46,8 +46,9 @@ class red_her(pygame.sprite.Sprite):
         self.image = sprite2
         self.image.fill((225, 0, 0))
         self.rect = self.image.get_rect()
-        self.rect.left = random.randint(0 * 16, 32 * 16)
-        self.rect.bottom = random.randint(7 * 16, 17 * 16)
+        self.rect.left = 352
+        self.rect.bottom = 272
+
 
 
 class goal(pygame.sprite.Sprite):
@@ -56,5 +57,5 @@ class goal(pygame.sprite.Sprite):
         self.image = sprite3
         self.image.fill((0, 255, 0))
         self.rect = self.image.get_rect()
-        self.rect.left = 0
-        self.rect.bottom = 48
+        self.rect.left = 0 * 16
+        self.rect.bottom = 4 * 16
