@@ -1,53 +1,65 @@
 import pygame
-import random
-width = 1000
-height = 1000
-sprite1 = pygame.Surface((50, 50))
-sprite2 = pygame.Surface((50, 50))
-
-
+# screen width and height
+width = 500
+height = 500
+# were place holders for characters
+sprite1 = pygame.Surface((16, 16))
+sprite2 = pygame.Surface((16, 16))
+sprite3 = pygame.Surface((16, 16))
+# facing left or right
+left = False
+right = False
+# the player
 class Player(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = sprite1
-        self.image.fill((225, 225, 225))
+        self.image = pygame.image.load("images/character.png")
+        self.image = pygame.transform.scale(self.image, (16, 32))
+        self.image.set_colorkey((255,255,255))
         self.rect = self.image.get_rect()
-        self.rect.centerx = width / 2
-        self.rect.bottom = height - 10
+        self.rect.left = 272
+        self.rect.top = 320
+        # used for movement and collision calculation
         self.speedx = 0
         self.speedy = 0
-        self.in_air = False
-    def update(self):
-        self.speedx = 0
-        keystate = pygame.key.get_pressed()
-        if keystate[pygame.K_LEFT]:
-            self.speedx = -8
-        if keystate[pygame.K_RIGHT]:
-            self.speedx = 8
-        self.rect.x += self.speedx
-        if self.rect.right > width:
-            self.rect.right = width
-        if self.rect.left < 0:
-            self.rect.left = 0
-        if keystate[pygame.K_UP]:
-            self.speedy = -8
-        if keystate[pygame.K_DOWN]:
-            self.speedy = 8
-        self.rect.y += self.speedy
-        if self.rect.top > 950:
-            self.rect.top = 950
-            self.speedy = 0
-            self.in_air = False
-        else:
-            self.in_air = True
-        if self.rect.bottom < 50:
-            self.rect.bottom = 50
+        self.movement = [0,0]
 
-class Enemy(pygame.sprite.Sprite):
+#boundaries and the rect and image move at the same rate
+    def update(self):
+        self.movement[0] += self.speedx
+        self.movement[1] += self.speedy
+        self.speedx = 0
+        self.speedy = 0
+
+        if self.rect.right >= width:
+            self.rect.right = width
+        if self.rect.left <= 0:
+            self.rect.left = 0
+        if self.rect.bottom >= height:
+            self.rect.bottom = height
+        if self.rect.top <= 0:
+            self.rect.top = 0
+
+
+# Red herring or the one you want to avoid
+class red_her(pygame.sprite.Sprite):
     def __init__(self):
         pygame.sprite.Sprite.__init__(self)
-        self.image = sprite2
-        self.image.fill((225, 0, 0))
+        self.image = pygame.image.load("images/time_waste.png")
+        self.image = pygame.transform.scale(self.image, (16, 32))
+        self.image.set_colorkey((255, 255, 255))
         self.rect = self.image.get_rect()
-        self.rect.centerx = random.randint(20, 950)
-        self.rect.bottom = random.randint(100, 400)
+        self.rect.left = 352
+        self.rect.bottom = 272
+
+
+# Goal or the one you want to help
+class goal(pygame.sprite.Sprite):
+    def __init__(self):
+        pygame.sprite.Sprite.__init__(self)
+        self.image = pygame.image.load("images/need_help.png")
+        self.image = pygame.transform.scale(self.image, (32, 16))
+        self.rect = self.image.get_rect()
+        self.image.set_colorkey((255, 255, 255))
+        self.rect.left = 0
+        self.rect.bottom = 48
